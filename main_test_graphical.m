@@ -1,27 +1,46 @@
+close all
 clear;
 clc;
-M=imread('E:\Third year\EEE380\Example AFM Data\Nice3.0_PR0137.0_00002_1_512x512.png');   %Read the image location 
+M=imread('E:\Third year\EEE380\Example AFM Data\PR0137.0_00002_1_corped.spm_521x521.jpg');   %Read the image location 
+figure,imshow(M), title ('original graph');
 %threshold = graythresh(M);     %automatically thresholding
 %(value for threshold can also be calculated or manually adjusted (from 0 to 1) to personal preferences)
-%gray scaling:
 
-K=stretchlim(M);  %获取最佳区间
-M2=imadjust(M,K,[]);  %调整灰度范围
+%gray scaling:
+%K=stretchlim(M);  %获取最佳区间
+%M2=imadjust(M,K,[]);  %调整灰度范围
 
 %increase strenghth of bright dots
-%F = imadjust(M,[0.1 0.9], [0 1]);
-%figure, imshow (F)
+%F = imadjust(M,[0.01 0.8], [0 1]);
+%figure, imshow (F), title('F');
+M2=rgb2gray(M);
+figure, imshow (M2), title('grayscaled image');
+G1 = adapthisteq(M2,'NumTiles',[115 115],'ClipLimit',0.011); %use function adapthisteq to complete the grayscale histogram equalization processing
+figure, imshow (G1), title('image after grayscale histergram equalization');
+% %increase strenghth of bright dots
+% F2 = imadjust(G1,[0.1 0.80], [0 1]);
+% figure, imshow (F2), title('F2');
 
-%blur
+%anti-blur
+
+%increase strenghth of bright dots
+%F2 = imadjust(G1,[0.15 0.95], [0 1]);
+%figure, imshow (F2), title('F2');
 
 %erode
-SE = strel('sphere', 2);
-I2 = imerode(M,SE);
-se = strel('line',6,6);
-I2 = imerode(I2,se);
-%threshold = graythresh(M);     %automatically thresholding
+SE = strel('Ball',2,2);
+I2 = imerode(G1,SE);
+figure,imshow(I2), title ('eroded image');
+% se = strel('line',6,6);
+% I2 = imerode(I2,se);
+threshold = graythresh(I2);     %automatically thresholding
 %(value for threshold can also be calculated or manually adjusted (from 0 to 1) to personal preferences)
-I = im2bw(I2,0.3);       %#ok<IM2BW> %Binaralization
+I = im2bw(I2,0.5);       %#ok<IM2BW> %Binaralization
+figure,imshow(I), title ('thresholded eroded image');
+
+%cutoff the edges
+% BWnobord = imclearborder(I);
+% figure, imshow(BWnobord),title('Cleared Border Image');
 %SE = strel('disk', 1);
 %I2 = imerode(I2,SE);
 %[labeled, numObjects]=bwlabel(I, 8); %* finding the number of area of white sections, only works when the graph is binalized
@@ -30,20 +49,14 @@ f=I;
 
 [L,n]= bwlabel(f);
 
-figure(1);
-imshow(M2)
-figure(2);
-imshow(M);    
-figure(3);
-imshow(I);
-figure(4);
-imshow(I2);
-figure(5); 
-imshow(f); title ('finding all the quantum dots');
+%figure,imshow(M2)    
+figure, imshow(f); title ('finding all the quantum dots');
 hold on    % later plotting commands will plot on this image.
 % use r (row) and c (column) with mean function to find the center of  mass for the white areas
+x = zeros(n,1);
+y = zeros(n,1); 
 
-for k = 1:n % for loop switching from 1 to nth number of the white section
+for k = 1:n  % for loop switching from 1 to nth number of the white section
 
 [r,c]= find(L == k); % L stands for Label matrix
 
@@ -51,16 +64,15 @@ rbar = mean(r);
 
 cbar = mean(c);
 
-%plot(cbar,rbar,'Marker','o','MarkerEdgeColor','k','MarkerFaceColor','k','MarkerSize',10);
+plot(cbar,rbar,'Marker','*','MarkerEdgeColor','b','MarkerSize',5);  
+%text(cbar,rbar,num2str(k),'Color','red','FontSize',10);
 
-plot(cbar,rbar,'Marker','*','MarkerEdgeColor','b','MarkerSize',5);     % marking
 
-%text(cbar,rbar,num2str(k),'Color','red','FontSize',10); 
+x(k) = rbar;
+y(k) = cbar;
+
+
 
 end
 
-%figure,imshow(f);title('标注标号');
-
-%hold on    % So later plotting commands plot on top of the image.
-
-%I = im2bw(M,0.1);
+Centres = [x,y];
